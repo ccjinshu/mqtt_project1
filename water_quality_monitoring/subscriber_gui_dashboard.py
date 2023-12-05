@@ -162,12 +162,13 @@ def check_sensors_status():
 # Function to start receiving data (开始接收数据的函数)
 def start_receiving_data():
     """Start receiving data from MQTT broker (开始从MQTT broker接收数据)"""
+    global is_receiving_data
+    is_receiving_data = True  # Set the flag to start processing messages (设置标志以开始处理消息)
     client.on_message = on_message
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     for topic, qos in MQTT_TOPICS:
         client.subscribe(topic)
     client.loop_start()
-    is_receiving_data = True  # Set the flag to start processing messages (设置标志以开始处理消息)
 
 # Function to stop receiving data (停止接收数据的函数)
 def stop_receiving_data():
