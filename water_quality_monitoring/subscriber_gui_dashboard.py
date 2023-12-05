@@ -77,13 +77,19 @@ control_frame.pack(side=tk.RIGHT, padx=5, pady=5)
 
 # Function to update sensor information display (更新传感器信息显示的函数)
 def update_sensor_info_display():
-    for widget in sensor_info_frame.winfo_children():
-        widget.destroy()
+    existing_labels = {widget.cget("text").split(" (")[0]: widget for widget in sensor_info_frame.winfo_children()}
 
     for sensor_id, info in sensor_info.items():
-        label = ttk.Label(sensor_info_frame, text=f"Sensor {sensor_id} (Location: {info['location']})",
-                          background=info['color'])
-        label.pack(side=tk.LEFT, padx=5, pady=5)
+        sensor_text = f"Sensor {sensor_id}"
+        full_text = f"{sensor_text} (Location: {info['location']})"
+
+        if sensor_text in existing_labels:
+            # Update the text if the label exists (如果标签存在，更新文本)
+            existing_labels[sensor_text].config(text=full_text, background=info['color'])
+        else:
+            # Create a new label (创建新标签)
+            label = ttk.Label(sensor_info_frame, text=full_text, background=info['color'])
+            label.pack(side=tk.LEFT, padx=5, pady=5)
 
 # Create Matplotlib charts (创建Matplotlib图表)
 fig, axes = plt.subplots(4, 1, figsize=(10, 15))

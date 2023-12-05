@@ -26,17 +26,17 @@ def create_data(device_id, location, status):
     # Generate payload with environmental data (生成带有环境数据的载荷)
     payload = {
         'data_id': START_ID,
+        'device': {
+            'id': device_id,
+            'location': location,  # Location of the sensor (传感器位置)
+            'status': status  # Sensor status (传感器状态)
+        },
         'environment': {
             'timestamp': int(time.time()),
             'temperature': round(random.gauss(TEMPERATURE_MEAN, TEMPERATURE_STD), 2),
             'humidity': round(random.gauss(HUMIDITY_MEAN, HUMIDITY_STD), 2),
             'snow_depth': round(random.uniform(*SNOW_DEPTH_RANGE), 2),
             'wind_speed': round(random.uniform(*WIND_SPEED_RANGE), 2)
-        },
-        'device': {
-            'id': device_id,
-            'location': location,   # Location of the sensor (传感器位置)
-            'status': status        # Sensor status (传感器状态)
         }
     }
     START_ID += 1
