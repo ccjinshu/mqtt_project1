@@ -24,6 +24,10 @@ def on_message(client, userdata, msg):
     data_cache[simulator_id]["water_temp"].append(payload["water_temp"])
     data_cache[simulator_id]["co2_level"].append(payload["co2_level"])
 
+    # 更新在线仿真器信息
+    online_simulators_list = list(data_cache.keys())
+    online_simulators.set(f"Online Simulators: {len(online_simulators_list)}\n{', '.join(online_simulators_list)}")
+
 # MQTT客户端配置
 client = mqtt.Client()
 client.on_message = on_message
@@ -35,10 +39,28 @@ for topic, qos in MQTT_TOPICS:
 root = tk.Tk()
 root.title("Water Quality Monitoring Dashboard")
 
+# 设置窗口大小和居中
+window_width = 800  # 设置窗口宽度
+window_height = 600  # 设置窗口高度
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+x = (screen_width - window_width) // 2
+y = (screen_height - window_height) // 2
+root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+# 添加在线仿真器指示器
+online_simulators = tk.StringVar()
+online_simulators.set("Online Simulators: 0\n")
+online_simulators_label = tk.Label(root, textvariable=online_simulators)
+online_simulators_label.pack()
+
 fig, (ax1, ax2) = plt.subplots(2, 1)
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas_widget = canvas.get_tk_widget()
 canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+# 增加曲线图之间的距离
+plt.subplots_adjust(hspace=0.4)
 
 # 动画更新函数
 def animate(i):
