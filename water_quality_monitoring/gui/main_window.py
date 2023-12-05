@@ -24,9 +24,10 @@ def on_message(client, userdata, msg):
     data_cache[simulator_id]["water_temp"].append(payload["water_temp"])
     data_cache[simulator_id]["co2_level"].append(payload["co2_level"])
 
-    # Update online simulators information (更新在线仿真器信息)
+    # Update online sensors information (更新在线传感器信息) ☺◎●
     online_simulators_list = list(data_cache.keys())
-    online_simulators.set(f"Online Simulators: {len(online_simulators_list)}\n{', '.join(online_simulators_list)}")
+    online_simulators.set(f"Online Sensors: {len(online_simulators_list)}\n#{', '.join(online_simulators_list)}")
+
 
 # MQTT Client Configuration (MQTT客户端配置)
 client = mqtt.Client()
@@ -51,7 +52,7 @@ root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 # Add online Sensors indicator (添加在线传感器指示器)
 online_simulators = tk.StringVar()
 online_simulators.set("Online Sensors: 0\n")
-online_simulators_label = tk.Label(root, textvariable=online_simulators)
+online_simulators_label = tk.Label(root, textvariable=online_simulators, font=("Arial", 16))
 online_simulators_label.pack()
 
 fig, (ax1, ax2) = plt.subplots(2, 1)
@@ -91,7 +92,7 @@ def on_closing():
     client.disconnect()
     root.destroy()
 
-root.protocol("WM_DELETE_WINDOW", on_closing)
+# root.protocol("WM_DELETE_WINDOW", on_closing)
 
 # Start MQTT loop and Tkinter event loop (开始MQTT循环和Tkinter事件循环)
 mqtt_loop()
