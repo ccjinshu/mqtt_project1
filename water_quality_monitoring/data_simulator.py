@@ -25,7 +25,7 @@ WIND_SPEED_RANGE = (0, 100)  # Wind speed range in km/h (风速范围，千米/�
 
 def simulateTime():
     global START_ID
-    start_date ='2021-01-01 11:00:00'
+    start_date ='2000-01-01 11:00:00'
     #模拟数据采集时间为 START_ID * 1天
     v_time  = time.mktime(time.strptime(start_date,'%Y-%m-%d %H:%M:%S')) + START_ID * 24 * 60 * 60
     return v_time
