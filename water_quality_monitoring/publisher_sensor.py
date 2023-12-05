@@ -47,7 +47,8 @@ class Sensor:
                 data = data_simulator.create_data(self.sensor_id,self.sensor_location,self.sensor_status)
                 payload = json.dumps(data)
                 self.client.publish(self.topic, payload)
-                print(f"Published: {payload}")
+                # print(f"Published: {payload}")
+                data_simulator.print_data(data)
                 time.sleep(PUBLISH_INTERVAL)
         except KeyboardInterrupt:
             print("Publishing stopped")
