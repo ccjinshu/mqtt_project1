@@ -7,7 +7,7 @@
 #   Wang, Hui
 #   Peng Gu, Peng
 #   Cai,Ligeng
-
+import time
 # subscriber_gui_dashboard.py
 
 import tkinter as tk
@@ -24,6 +24,9 @@ MQTT_BROKER = "localhost"
 MQTT_PORT = 1883
 MQTT_TOPICS = [("sensor/data", 0)]  # Subscribed topics (订阅的主题)
 
+# Constants (常量)
+SENSOR_TIMEOUT = 5  # Time in seconds after which sensor is considered offline (传感器被认为掉线的时间，单位：秒)
+
 # Data Cache (数据缓存)
 data_cache = {}
 sensor_info = {}  # Dictionary to store sensor information (存储传感器信息的字典)
@@ -34,8 +37,12 @@ colors = list(mcolors.CSS4_COLORS.values())
 # MQTT client configuration (MQTT客户端配置)
 client = mqtt.Client()
 
+is_receiving_data = True
+
 # MQTT message callback function (MQTT消息回调函数)
 def on_message(client, userdata, msg):
+    if   is_receiving_data == False: return
+    # Decode JSON payload (解码JSON载荷)
     payload = json.loads(msg.payload.decode())
     sensor_id = payload["device"]["id"]
     location = payload["device"]["location"]
@@ -56,7 +63,8 @@ def on_message(client, userdata, msg):
     data_cache[sensor_id]['humidity'].append(data["humidity"])
     data_cache[sensor_id]['snow_depth'].append(data["snow_depth"])
     data_cache[sensor_id]['wind_speed'].append(data["wind_speed"])
-
+    sensor_info[sensor_id]['is_online'] = True  # Set sensor status to online (将传感器状态设置为在线)
+    sensor_info[sensor_id]['last_update'] = time.time()  # Update last update time (更新最后更新时间)
     update_sensor_info_display()
 
 # Create Tkinter window (创建Tkinter窗口)
@@ -75,21 +83,40 @@ control_frame.pack(side=tk.RIGHT, padx=5, pady=5)
 
 
 
+# Create a top bar for sensor information display using Treeview (使用Treeview创建顶部传感器信息显示栏)
+top_frame = tk.Frame(root)
+top_frame.pack(side=tk.TOP, fill=tk.X)
+
+# Define columns for Treeview (为Treeview定义列)
+columns = ('Sensor ID', 'Location', 'Status')
+
+tree = ttk.Treeview(top_frame, columns=columns, show='headings', height=2)
+tree.grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
+for col in columns:
+    tree.heading(col, text=col)
+
+# Create a scrollbar for the treeview (为treeview创建一个滚动条)
+scrollbar = ttk.Scrollbar(top_frame, orient="vertical", command=tree.yview)
+scrollbar.grid(row=0, column=1, sticky='ns')
+tree.configure(yscrollcommand=scrollbar.set)
+
+top_frame.grid_columnconfigure(0, weight=1)
+top_frame.grid_rowconfigure(0, weight=1)
+
+
 # Function to update sensor information display (更新传感器信息显示的函数)
 def update_sensor_info_display():
-    existing_labels = {widget.cget("text").split(" (")[0]: widget for widget in sensor_info_frame.winfo_children()}
-
     for sensor_id, info in sensor_info.items():
-        sensor_text = f"Sensor {sensor_id}"
-        full_text = f"{sensor_text} (Location: {info['location']})"
-
-        if sensor_text in existing_labels:
-            # Update the text if the label exists (如果标签存在，更新文本)
-            existing_labels[sensor_text].config(text=full_text, background=info['color'])
+        status = "Online" if info.get('is_online', False) else "Offline"
+        color = "green" if status == "Online" else "gray"
+        location = info['location']
+        if tree.exists(sensor_id):
+            tree.item(sensor_id, values=(sensor_id, location, status), tags=(color,))
         else:
-            # Create a new label (创建新标签)
-            label = ttk.Label(sensor_info_frame, text=full_text, background=info['color'])
-            label.pack(side=tk.LEFT, padx=5, pady=5)
+            tree.insert('', 'end', iid=sensor_id, text="", values=(sensor_id, location, status), tags=(color,))
+
+    tree.tag_configure('green', foreground='green')
+    tree.tag_configure('gray', foreground='gray')
 
 # Create Matplotlib charts (创建Matplotlib图表)
 fig, axes = plt.subplots(4, 1, figsize=(10, 15))
@@ -119,6 +146,19 @@ def animate(i):
 
 ani = animation.FuncAnimation(fig, animate, interval=1000)
 
+# Function to check sensors' online status (检查传感器在线状态的函数)
+def check_sensors_status():
+    current_time = time.time()
+    for sensor_id, info in sensor_info.items():
+        last_update = info.get('last_update', 0)
+        if current_time - last_update > SENSOR_TIMEOUT:
+            if info.get('is_online', False):
+                info['is_online'] = False
+                update_sensor_info_display()
+
+    root.after(1000, check_sensors_status)  # Schedule to run this function again after 1 second (1秒后再次运行此函数)
+
+
 # Function to start receiving data (开始接收数据的函数)
 def start_receiving_data():
     """Start receiving data from MQTT broker (开始从MQTT broker接收数据)"""
@@ -127,26 +167,35 @@ def start_receiving_data():
     for topic, qos in MQTT_TOPICS:
         client.subscribe(topic)
     client.loop_start()
+    is_receiving_data = True  # Set the flag to start processing messages (设置标志以开始处理消息)
 
 # Function to stop receiving data (停止接收数据的函数)
 def stop_receiving_data():
     """Stop receiving data from MQTT broker (停止从MQTT broker接收数据)"""
+    global is_receiving_data
+    is_receiving_data = False  # Set the flag to stop processing messages (设置标志以停止处理消息)
+
+    time.sleep(0.5) # 等待一小段时间，以确保所有消息都已处理完毕
     client.loop_stop()
     client.disconnect()
 
-# Add control buttons at the top-right corner (在顶部右侧添加控制按钮)
+# Add control buttons on the right side (在右侧添加控制按钮)
+control_frame = tk.Frame(top_frame)
+control_frame.grid(row=0, column=1, sticky='ne', padx=0, pady=0)
+
 start_button = ttk.Button(control_frame, text="Start Receiving Data", command=start_receiving_data)
-start_button.pack(side=tk.LEFT)
+start_button.grid(row=0, column=2, padx=5, pady=5)
 
 stop_button = ttk.Button(control_frame, text="Stop Receiving Data", command=stop_receiving_data)
-stop_button.pack(side=tk.LEFT)
+stop_button.grid(row=1, column=2, padx=5, pady=5)
 
 # Set the closing behavior of the Tkinter window (设置Tkinter窗口的关闭行为)
 def on_closing():
-    client.disconnect()  # Ensure the MQTT loop is stopped (确保MQTT循环停止)
+    stop_receiving_data()  # Ensure the MQTT loop is stopped (确保MQTT循环停止)
     root.destroy()
 
+start_receiving_data()  # Start receiving data (开始接收数据)
 root.protocol("WM_DELETE_WINDOW", on_closing)
-
 # Run Tkinter event loop (运行Tkinter事件循环)
+root.after(1000, check_sensors_status)  # Start checking sensors' status (开始检查传感器的状态)
 root.mainloop()

@@ -25,7 +25,7 @@ PUBLISH_INTERVAL = 2  # 发布间隔（秒）
 #传感器状态数组
 SENSOR_STATUS = ['active','active','active','active','active','inactive']
 #传感器位置数组，用于随机生成传感器位置，数据来源为加拿大多伦多附近的各大滑雪场名字
-SENSOR_LOCATION = ['Blue Mountain','Horseshoe Resort','Mount St. Louis Moonstone','Snow Valley','LakeRidge Ski Resort','Glen Eden','Dagmar Ski Resort']
+SENSOR_LOCATION = ['Tremblant','Blue Mountain','Horseshoe Resort','Mount St. Louis Moonstone','Snow Valley','LakeRidge Ski Resort','Glen Eden','Dagmar Ski Resort','Sunshine Resort','Mountain View','Lake Louis','Cypress Mountain','Grouse Mountain','Whistler Blackcomb','Mount Seymour','Revelstoke Mountain Resort']
 
 class Sensor:
     def __init__(self, broker=BROKER, port=PORT, topic=TOPIC):
