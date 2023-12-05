@@ -1,5 +1,5 @@
 # subscriber_gui_dashboard.py
-
+import threading
 import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -30,13 +30,18 @@ msg_count = 0
 # Assign different colors for different sensors (为不同的传感器分配不同的颜色)
 colors = list(mcolors.CSS4_COLORS.values())
 
-# MQTT client configuration (MQTT客户端配置)
-client = mqtt.Client()
+
+def run_mqtt_client():
+    client.loop_forever()
+
 
 # MQTT message callback function (MQTT消息回调函数)
 def on_message(client, userdata, msg):
     global is_receiving_data
     global msg_count
+    if not is_receiving_data: # Ignore messages if not receiving data (如果不接收数据，则忽略消息)
+        return
+
     if is_receiving_data:
         msg_count += 1
         # Update message count label (更新消息计数标签)
@@ -82,26 +87,36 @@ def start_receiving_data():
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     for topic, qos in MQTT_TOPICS:
         client.subscribe(topic)
-    client.on_message = on_message
-    client.loop_start()
+    # # client.on_message = on_message  # Assign on_message callback function (分配on_message回调函数)
+    # client.loop_start()
+
+    # Create and start the MQTT client thread (创建并启动MQTT客户端线程)
+    mqtt_thread = threading.Thread(target=run_mqtt_client, daemon=True)
+    mqtt_thread.start()
+
     # Update running status label (更新运行状态标签)
     status_label.config(text="Running...", foreground="green")
 
 # Function to stop receiving data (停止接收数据的函数)
 def stop_receiving_data():
+    global is_receiving_data
+    is_receiving_data = False
+
     # Disable stop button (禁用停止按钮)
     stop_button.config(state=tk.DISABLED)
     # Enable start button (启用开始按钮)
     start_button.config(state=tk.NORMAL)
-    global is_receiving_data
-    is_receiving_data = False
 
-    #wait for the last message to be processed
-    time.sleep(1)
-    client.loop_stop()
     client.disconnect()
     #update running status label (更新运行状态标签)
     status_label.config(text="Stopped", foreground="red")
+
+
+
+
+# MQTT client configuration (MQTT客户端配置)
+client = mqtt.Client()
+client.on_message = on_message
 
 # Create Tkinter window (创建Tkinter窗口)
 root = tk.Tk()
@@ -112,7 +127,14 @@ control_frame = tk.Frame(root)
 control_frame.grid(row=0, column=0, sticky="nsew")
 
 chart_frame = tk.Frame(root)
-chart_frame.grid(row=0, column=1, sticky="nsew")
+chart_frame.grid(row=0, column=1, sticky="nsew",padx=0,pady=0)
+
+# 配置行和列的权重
+root.grid_rowconfigure(0, weight=1)
+root.grid_columnconfigure(0, weight=1)  # 增加控制区的列权重
+root.grid_columnconfigure(1, weight=3)  # 增加图表区的列权重，这里的权重更大，因此图表区会获得更多空间
+
+
 
 # Add running status label (添加运行状态标签)
 status_label = ttk.Label(control_frame, text="Running...", font=("Arial", 12), foreground="green")
@@ -185,8 +207,14 @@ def update_sensor_info_display():
 # Create Matplotlib charts (创建Matplotlib图表)
 fig, axes = plt.subplots(4, 1, figsize=(10, 15))
 
+fig.autofmt_xdate()  # Automatically format x-axis as dates (自动将x轴格式化为日期)
+
+
 #ajust the space between subplots
-plt.subplots_adjust(hspace=0.5)
+plt.subplots_adjust(hspace=0.5,top=0.90,bottom=0.1)
+
+# Add a big title at the top of the chart area (在图表区域的顶部添加一个大标题)
+fig.suptitle('Ski Resort Environmental Monitoring Dashboard', fontsize=16)
 
 # Create Tkinter canvas widget (创建Tkinter画布小部件)
 canvas = FigureCanvasTkAgg(fig, master=chart_frame)
@@ -222,5 +250,7 @@ def on_closing():
 
 root.protocol("WM_DELETE_WINDOW", on_closing)
 start_receiving_data()
+root.after(1000, update_sensor_info_display)  # Start the periodic update (开始周期性更新)
+
 # Run Tkinter event loop (运行Tkinter事件循环)
 root.mainloop()
