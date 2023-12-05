@@ -21,3 +21,5 @@ matplotlib
 tkinter
 
  
+
+pip install matplotlib paho-mqtt

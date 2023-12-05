@@ -43,7 +43,7 @@ def create_data(device_id, location, status):
             'timestamp': int(simulateTime()),
             'temperature': round(random.gauss(TEMPERATURE_MEAN, TEMPERATURE_STD), 2),
             'humidity': round(random.gauss(HUMIDITY_MEAN, HUMIDITY_STD), 2),
-            'snow_depth': round(random.uniform(*SNOW_DEPTH_RANGE), 2),
+            'snow_depth': round(random.gauss(*SNOW_DEPTH_RANGE), 2),
             'wind_speed': round(random.uniform(*WIND_SPEED_RANGE), 2)
         }
     }
