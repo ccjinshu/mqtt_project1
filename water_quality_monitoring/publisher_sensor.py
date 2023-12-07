@@ -19,7 +19,7 @@ import data_simulator
 BROKER = 'localhost'
 PORT = 1883
 TOPIC = 'sensor/data'
-PUBLISH_INTERVAL = 0.02  # 发布间隔（秒）
+PUBLISH_INTERVAL = 0.1  # 发布间隔（秒）
 
 #模拟器线程数
 THREAD_NUM = 6
