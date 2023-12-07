@@ -22,6 +22,8 @@ MQTT_TOPICS = [("sensor/data", 0)]  # Subscribed topics (订阅的主题)
 
 SENSOR_TIMEOUT = 5  # Time in seconds after which sensor is considered offline (传感器被认为掉线的时间，单位：秒)
 X_MAX_DISPLAY = 180  # Maximum number of data points to display (显示的最大数据点数)
+# 图像刷新间隔
+REFRESH_INTERVAL = 500  # Refresh interval in milliseconds (刷新间隔，单位：毫秒)
 
 
 # Data Cache (数据缓存)
@@ -31,7 +33,10 @@ is_receiving_data = True  # Flag to control data reception (控制数据接收�
 
 msg_count = 0
 # Assign different colors for different sensors (为不同的传感器分配不同的颜色)
-colors = list(mcolors.CSS4_COLORS.values())
+colors = ['red', 'green', 'blue', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan', 'magenta', 'yellow','orangered', 'yellowgreen']
+# colors = list(mcolors.cnames.keys()）
+# Get a list of all available colors (获取所有可用颜色的列表)
+
 
 #set the latest timestamp of '2000-01-01 00:00:00'
 latest_timestamp = 946656000 # Latest timestamp received (最新接收到的时间戳)
@@ -59,7 +64,7 @@ def on_message(client, userdata, msg):
             latest_timestamp = timestamp
             #format the timestamp to date string
             str1= time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(latest_timestamp))
-            print(str1)
+            # print(str1)
         # Initialize data cache for new sensor ID (为新的传感器ID初始化数据缓存)
         if sensor_id not in data_cache:
             data_cache[sensor_id] = {
@@ -68,6 +73,7 @@ def on_message(client, userdata, msg):
                 'snow_depth': [],
                 'wind_speed': []
             }
+            #get a random   color
             sensor_info[sensor_id] = {
                 'color': colors[len(sensor_info) % len(colors)],
                 'location': location,
@@ -243,6 +249,7 @@ def animate(i):
 
     for ax, (y_label, title) in zip(axes, [('temperature', 'Temperature (°C)'), ('humidity', 'Humidity (%)'), ('snow_depth', 'Snow Depth (cm)'), ('wind_speed', 'Wind Speed (km/h)')]):
         ax.clear()
+
         ax.set_title(title)
         ax.set_xlabel("Time")
         ax.set_ylabel(title)
@@ -262,7 +269,7 @@ def animate(i):
 
         ax.legend(loc="upper left")
 
-ani = animation.FuncAnimation(fig, animate, interval=1000)
+ani = animation.FuncAnimation(fig, animate, interval=REFRESH_INTERVAL)
 
 # Set the closing behavior of the Tkinter window (设置Tkinter窗口的关闭行为)
 def on_closing():

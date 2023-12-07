@@ -21,33 +21,31 @@ HUMIDITY_STD = 10        # Humidity standard deviation (湿度标准差)
 SNOW_DEPTH_RANGE = (0, 200)  # Snow depth range in cm (积雪深度范围，厘米)
 WIND_SPEED_RANGE = (0, 100)  # Wind speed range in km/h (风速范围，千米/小时)
 
+START_DATE = '2000-01-01 11:00:00'  # Start date for data collection (数据采集的开始日期)
 
-
-def simulateTime():
-    global START_ID
-    start_date ='2000-01-01 11:00:00'
+def simulateTime(start_id):
+    start_date =  START_DATE
     #模拟数据采集时间为 START_ID * 1天
-    v_time  = time.mktime(time.strptime(start_date,'%Y-%m-%d %H:%M:%S')) + START_ID * 24 * 60 * 60
+    v_time  = time.mktime(time.strptime(start_date,'%Y-%m-%d %H:%M:%S')) + start_id * 24 * 60 * 60
     return v_time
-def create_data(device_id, location, status):
-    global START_ID
+def create_data(start_id,device_id, location, status):
+
     # Generate payload with environmental data (生成带有环境数据的载荷)
     payload = {
-        'data_id': START_ID,
+        'data_id': start_id,
         'device': {
             'id': device_id,
             'location': location,  # Location of the sensor (传感器位置)
             'status': status  # Sensor status (传感器状态)
         },
         'environment': {
-            'timestamp': int(simulateTime()),
+            'timestamp': int(simulateTime(start_id)),
             'temperature': round(random.gauss(TEMPERATURE_MEAN, TEMPERATURE_STD), 2),
             'humidity': round(random.gauss(HUMIDITY_MEAN, HUMIDITY_STD), 2),
             'snow_depth': round(random.gauss(*SNOW_DEPTH_RANGE), 2),
             'wind_speed': round(random.uniform(*WIND_SPEED_RANGE), 2)
         }
     }
-    START_ID += 1
     return payload
 
 def print_data(data):
